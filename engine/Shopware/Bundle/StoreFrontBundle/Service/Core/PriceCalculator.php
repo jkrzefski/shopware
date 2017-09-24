@@ -26,9 +26,29 @@ namespace Shopware\Bundle\StoreFrontBundle\Service\Core;
 
 use Shopware\Bundle\StoreFrontBundle\Service\PriceCalculatorInterface;
 use Shopware\Bundle\StoreFrontBundle\Struct;
+use Shopware\Components\Model\ModelManager;
+use Shopware\Models\Shop\Currency;
 
 class PriceCalculator implements PriceCalculatorInterface
 {
+    /**
+     * @var int
+     */
+    private $defaultCurrencyFactor = 1;
+
+    /**
+     * @param ModelManager $modelManager
+     */
+    public function __construct(ModelManager $modelManager)
+    {
+        $currencyRepository = $modelManager->getRepository(Currency::class);
+        $defaultCurrency = $currencyRepository->findOneBy(['default' => true]);
+
+        if ($defaultCurrency !== null && $defaultCurrency->getFactor() !== 0) {
+            $this->defaultCurrencyFactor = $defaultCurrency->getFactor();
+        }
+    }
+
     /**
      * {@inheritdoc}
      */
@@ -54,6 +74,16 @@ class PriceCalculator implements PriceCalculatorInterface
         if ($customerGroup->useDiscount() && $customerGroup->getPercentageDiscount()) {
             $price = $price - ($price / 100 * $customerGroup->getPercentageDiscount());
         }
+
+        /*
+         * Currency base calculation:
+         *
+         * We have to interpret the prices from the database as prices of the
+         * default currency. Therefore we have to divide it by that currency's
+         * factor. If we don't to this, we would rely on the default currency
+         * to have a factor of 1 which might not always be the case.
+         */
+        $price = $price / $this->defaultCurrencyFactor;
 
         /**
          * Currency calculation:
