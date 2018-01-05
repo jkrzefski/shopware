@@ -240,28 +240,39 @@ class ContextService implements ContextServiceInterface
 
     /**
      * @return int
+     * @throws \RuntimeException
      */
     private function getStoreFrontShopId()
     {
         /** @var $shop Models\Shop\Shop */
         $shop = $this->container->get('shop');
+        
+        if ($shop === null) {
+            throw new \RuntimeException('Cannot initialize shop context because the container does not know of any `shop`.');
+        }
 
         return $shop->getId();
     }
 
     /**
      * @return int
+     * @throws \RuntimeException
      */
     private function getStoreFrontCurrencyId()
     {
         /** @var $shop Models\Shop\Shop */
         $shop = $this->container->get('shop');
+        
+        if ($shop === null) {
+            throw new \RuntimeException('Cannot initialize shop context because the container does not know of any `shop`.');
+        }
 
         return $shop->getCurrency()->getId();
     }
 
     /**
      * @return string
+     * @throws \RuntimeException
      */
     private function getStoreFrontCurrentCustomerGroupKey()
     {
@@ -273,6 +284,10 @@ class ContextService implements ContextServiceInterface
 
         /** @var $shop Models\Shop\Shop */
         $shop = $this->container->get('shop');
+        
+        if ($shop === null) {
+            throw new \RuntimeException('Cannot initialize shop context because the container does not know of any `shop`.');
+        }
 
         return $shop->getCustomerGroup()->getKey();
     }
