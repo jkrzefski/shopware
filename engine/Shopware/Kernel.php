@@ -582,6 +582,49 @@ class Kernel implements HttpKernelInterface
         $this->container->set('kernel', $this);
         $this->container->set('db_connection', $this->connection);
     }
+    
+    /**
+     * Initializes a modified service container. This one may also contain services
+     * of plugins that are neither installed nor active.
+     *
+     * @param string[] $plugins
+     * @return Container
+     */
+    public function initializeModifiedContainer(array $plugins)
+    {
+        /** @var Plugin[] $pluginClasses */
+        $pluginClasses = [];
+
+        foreach ($plugins as $plugin) {
+            $pluginClasses[] = $this->getPlugins()[$plugin];
+        }
+
+        $class = $this->getContainerClass() . 'WithPlugins' . $this->createPluginHash($pluginClasses);
+
+        $cache = new ConfigCache(
+            $this->config['hook']['proxyDir'] . '/' . $class . '.php',
+            true //always check for file modified time
+        );
+
+        if (!$cache->isFresh()) {
+            $containerBuilder = $this->buildContainer();
+            foreach ($pluginClasses as $pluginClass) {
+                $pluginClass->build($containerBuilder);
+            }
+            $containerBuilder->compile();
+
+            $this->dumpContainer($cache, $containerBuilder, $class, 'Shopware\Components\DependencyInjection\Container');
+        }
+
+        require_once $cache->getPath();
+
+        /** @var Container $container */
+        $container = new $class();
+        $container->set('kernel', $this);
+        $container->set('db_connection', $this->connection);
+
+        return $container;
+    }
 
     /**
      * @return string
