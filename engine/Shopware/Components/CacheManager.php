@@ -466,17 +466,17 @@ class CacheManager
      *
      * @param string[] $tags
      *
-     * @return int
+     * @return string[]
      */
     public function clearByTags(array $tags)
     {
-        $count = 0;
-
-        foreach (array_unique($tags) as $tag) {
-            $count += (int) $this->clearByTag($tag);
+        foreach ($tags = array_unique($tags) as $key => $tag) {
+            if (!$this->clearByTag($tag)) {
+                unset($tags[$key]);
+            }
         }
 
-        return $count;
+        return $tags;
     }
 
     /**
@@ -486,7 +486,7 @@ class CacheManager
      *
      * @return bool
      */
-    public function clearByTag(array $tag)
+    public function clearByTag($tag)
     {
         switch ($tag) {
             case self::CACHE_TAG_CONFIG:

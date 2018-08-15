@@ -27,10 +27,12 @@ namespace Shopware\Commands;
 use Shopware\Bundle\PluginInstallerBundle\Service\InstallerService;
 use Shopware\Components\CacheManager;
 use Shopware\Components\Model\ModelManager;
+use Shopware\Components\Plugin\Context\InstallContext;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\SymfonyStyle;
 
 /**
  * @category  Shopware
@@ -60,7 +62,7 @@ class PluginUpdateCommand extends ShopwareCommand
             )
             ->addOption(
                 'clear-cache',
-                'cc',
+                'c',
                 InputOption::VALUE_NONE,
                 'Clear any caches that are requested by update routines'
             )
@@ -87,7 +89,7 @@ EOF
 
         if (!empty($pluginNames)) {
             foreach ($pluginNames as $pluginName) {
-                $this->updatePlugin($pluginManager, $pluginName, $output, empty($input->getOption('clear-cache')));
+                $this->updatePlugin($pluginManager, $pluginName, $input, $output, empty($input->getOption('clear-cache')));
             }
 
             return 0;
@@ -158,12 +160,13 @@ EOF
     /**
      * @param InstallerService $pluginManager
      * @param string           $pluginName
+     * @param InputInterface   $input
      * @param OutputInterface  $output
      * @param bool             $ignoreCache
      *
      * @return int 0 if everything went fine, or an error code
      */
-    private function updatePlugin(InstallerService $pluginManager, $pluginName, OutputInterface $output, $ignoreCache)
+    private function updatePlugin(InstallerService $pluginManager, $pluginName, InputInterface $input, OutputInterface $output, $ignoreCache)
     {
         try {
             $plugin = $pluginManager->getPluginByName($pluginName);
@@ -183,14 +186,47 @@ EOF
         $output->writeln(sprintf('Plugin %s has been updated successfully.', $pluginName));
 
         if (!$ignoreCache) {
+            $io = new SymfonyStyle($input, $output);
+
             /** @var CacheManager $cacheManager */
             $cacheManager = $this->container->get('shopware.cache_manager');
-            $cacheTags = $updateContext->getScheduled();
-            if ($cacheManager->clearByTags($cacheTags)) {
-                $output->writeln(sprintf('Caches cleared (%s).', join(', ', $cacheTags)));
+
+            $scheduledCaches = $this->getScheduledCaches([
+                $updateContext,
+            ]);
+
+            $successfulCaches = $cacheManager->clearByTags($scheduledCaches);
+            $failedCaches = array_diff($scheduledCaches, $successfulCaches);
+
+            if (!empty($failedCaches)) {
+                $io->warning(sprintf('Failed to clear caches: %s.', join(', ', $failedCaches)));
+            }
+
+            if (!empty($successfulCaches)) {
+                $io->success(sprintf('Successfully cleared caches: %s.', join(', ', $successfulCaches)));
             }
         }
 
         return 0;
+    }
+
+    /**
+     * @param InstallContext[] $contexts
+     *
+     * @return array
+     */
+    private function getScheduledCaches(array $contexts)
+    {
+        $caches = [];
+
+        foreach ($contexts as $context) {
+            if (!$context instanceof InstallContext || !array_key_exists('cache', $context->getScheduled())) {
+                continue;
+            }
+
+            $caches = array_merge($caches, $context->getScheduled()['cache']);
+        }
+
+        return $caches;
     }
 }

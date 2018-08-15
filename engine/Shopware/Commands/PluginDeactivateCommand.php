@@ -26,11 +26,12 @@ namespace Shopware\Commands;
 
 use Shopware\Bundle\PluginInstallerBundle\Service\InstallerService;
 use Shopware\Components\CacheManager;
-use Symfony\Component\Console\Command\Command;
+use Shopware\Components\Plugin\Context\InstallContext;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\SymfonyStyle;
 
 /**
  * @category  Shopware
@@ -54,7 +55,7 @@ class PluginDeactivateCommand extends ShopwareCommand
             )
             ->addOption(
                 'clear-cache',
-                'cc',
+                'c',
                 InputOption::VALUE_NONE,
                 'Clear any caches that are requested by deactivate routines'
             )
@@ -91,12 +92,45 @@ EOF
         $output->writeln(sprintf('Plugin %s has been deactivated', $pluginName));
 
         if (!empty($input->getOption('clear-cache'))) {
+            $io = new SymfonyStyle($input, $output);
+
             /** @var CacheManager $cacheManager */
             $cacheManager = $this->container->get('shopware.cache_manager');
-            $cacheTags = $deactivationContext->getScheduled();
-            if ($cacheManager->clearByTags($cacheTags)) {
-                $output->writeln(sprintf('Caches cleared (%s).', join(', ', $cacheTags)));
+
+            $scheduledCaches = $this->getScheduledCaches([
+                $deactivationContext,
+            ]);
+
+            $successfulCaches = $cacheManager->clearByTags($scheduledCaches);
+            $failedCaches = array_diff($scheduledCaches, $successfulCaches);
+
+            if (!empty($failedCaches)) {
+                $io->warning(sprintf('Failed to clear caches: %s.', join(', ', $failedCaches)));
+            }
+
+            if (!empty($successfulCaches)) {
+                $io->success(sprintf('Successfully cleared caches: %s.', join(', ', $successfulCaches)));
             }
         }
+    }
+
+    /**
+     * @param InstallContext[] $contexts
+     *
+     * @return array
+     */
+    private function getScheduledCaches(array $contexts)
+    {
+        $caches = [];
+
+        foreach ($contexts as $context) {
+            if (!$context instanceof InstallContext || !array_key_exists('cache', $context->getScheduled())) {
+                continue;
+            }
+
+            $caches = array_merge($caches, $context->getScheduled()['cache']);
+        }
+
+        return $caches;
     }
 }
