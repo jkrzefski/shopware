@@ -84,7 +84,7 @@ abstract class PluginCommand extends ShopwareCommand
         if (!empty($failedCaches)) {
             $io->warning(sprintf('Failed to clear caches: %s.', join(', ', $failedCaches)));
         }
-        
+
         if (!empty($successfulCaches)) {
             $io->success(sprintf('Successfully cleared caches: %s.', join(', ', $successfulCaches)));
         }
