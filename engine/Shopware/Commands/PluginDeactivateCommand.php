@@ -25,11 +25,8 @@
 namespace Shopware\Commands;
 
 use Shopware\Bundle\PluginInstallerBundle\Service\InstallerService;
-use Shopware\Components\CacheManager;
-use Shopware\Components\Plugin\Context\InstallContext;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
@@ -38,13 +35,15 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  *
  * @copyright Copyright (c) shopware AG (http://www.shopware.de)
  */
-class PluginDeactivateCommand extends ShopwareCommand
+class PluginDeactivateCommand extends PluginCommand
 {
     /**
      * {@inheritdoc}
      */
     protected function configure()
     {
+        parent::configure();
+
         $this
             ->setName('sw:plugin:deactivate')
             ->setDescription('Deactivates a plugin.')
@@ -52,12 +51,6 @@ class PluginDeactivateCommand extends ShopwareCommand
                 'plugin',
                 InputArgument::REQUIRED,
                 'Name of the plugin to be deactivated.'
-            )
-            ->addOption(
-                'clear-cache',
-                'c',
-                InputOption::VALUE_NONE,
-                'Clear any caches that are requested by deactivate routines'
             )
             ->setHelp(<<<'EOF'
 The <info>%command.name%</info> deactivates a plugin.
@@ -91,46 +84,6 @@ EOF
         $deactivationContext = $pluginManager->deactivatePlugin($plugin);
         $output->writeln(sprintf('Plugin %s has been deactivated', $pluginName));
 
-        if (!empty($input->getOption('clear-cache'))) {
-            $io = new SymfonyStyle($input, $output);
-
-            /** @var CacheManager $cacheManager */
-            $cacheManager = $this->container->get('shopware.cache_manager');
-
-            $scheduledCaches = $this->getScheduledCaches([
-                $deactivationContext,
-            ]);
-
-            $successfulCaches = $cacheManager->clearByTags($scheduledCaches);
-            $failedCaches = array_diff($scheduledCaches, $successfulCaches);
-
-            if (!empty($failedCaches)) {
-                $io->warning(sprintf('Failed to clear caches: %s.', join(', ', $failedCaches)));
-            }
-
-            if (!empty($successfulCaches)) {
-                $io->success(sprintf('Successfully cleared caches: %s.', join(', ', $successfulCaches)));
-            }
-        }
-    }
-
-    /**
-     * @param InstallContext[] $contexts
-     *
-     * @return array
-     */
-    private function getScheduledCaches(array $contexts)
-    {
-        $caches = [];
-
-        foreach ($contexts as $context) {
-            if (!$context instanceof InstallContext || !array_key_exists('cache', $context->getScheduled())) {
-                continue;
-            }
-
-            $caches = array_merge($caches, $context->getScheduled()['cache']);
-        }
-
-        return $caches;
+        $this->clearCachesIfRequested($input, $output, $deactivationContext);
     }
 }

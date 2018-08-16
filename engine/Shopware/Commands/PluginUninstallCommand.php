@@ -25,8 +25,6 @@
 namespace Shopware\Commands;
 
 use Shopware\Bundle\PluginInstallerBundle\Service\InstallerService;
-use Shopware\Components\CacheManager;
-use Shopware\Components\Plugin\Context\InstallContext;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -38,13 +36,15 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  *
  * @copyright Copyright (c) shopware AG (http://www.shopware.de)
  */
-class PluginUninstallCommand extends ShopwareCommand
+class PluginUninstallCommand extends PluginCommand
 {
     /**
      * {@inheritdoc}
      */
     protected function configure()
     {
+        parent::configure();
+
         $this
             ->setName('sw:plugin:uninstall')
             ->setDescription('Uninstalls a plugin.')
@@ -58,12 +58,6 @@ class PluginUninstallCommand extends ShopwareCommand
                 'S',
                 InputOption::VALUE_NONE,
                 'Keep the saved data of the plugin. (if supported)'
-            )
-            ->addOption(
-                'clear-cache',
-                'c',
-                InputOption::VALUE_NONE,
-                'Clear any caches that are requested by uninstall routines'
             )
             ->setHelp(<<<'EOF'
 The <info>%command.name%</info> uninstalls a plugin.
@@ -99,46 +93,6 @@ EOF
         $uninstallationContext = $pluginManager->uninstallPlugin($plugin, $removeData);
         $output->writeln(sprintf('Plugin %s has been uninstalled successfully.', $pluginName));
 
-        if (!empty($input->getOption('clear-cache'))) {
-            $io = new SymfonyStyle($input, $output);
-
-            /** @var CacheManager $cacheManager */
-            $cacheManager = $this->container->get('shopware.cache_manager');
-
-            $scheduledCaches = $this->getScheduledCaches([
-                $uninstallationContext,
-            ]);
-
-            $successfulCaches = $cacheManager->clearByTags($scheduledCaches);
-            $failedCaches = array_diff($scheduledCaches, $successfulCaches);
-
-            if (!empty($failedCaches)) {
-                $io->warning(sprintf('Failed to clear caches: %s.', join(', ', $failedCaches)));
-            }
-
-            if (!empty($successfulCaches)) {
-                $io->success(sprintf('Successfully cleared caches: %s.', join(', ', $successfulCaches)));
-            }
-        }
-    }
-
-    /**
-     * @param InstallContext[] $contexts
-     *
-     * @return array
-     */
-    private function getScheduledCaches(array $contexts)
-    {
-        $caches = [];
-
-        foreach ($contexts as $context) {
-            if (!$context instanceof InstallContext || !array_key_exists('cache', $context->getScheduled())) {
-                continue;
-            }
-
-            $caches = array_merge($caches, $context->getScheduled()['cache']);
-        }
-
-        return $caches;
+        $this->clearCachesIfRequested($input, $output, $uninstallationContext);
     }
 }
