@@ -70,7 +70,7 @@ class Shopware extends Enlight_Application
 
         $this->container = $container;
         $this->appPath = __DIR__ . DIRECTORY_SEPARATOR;
-        $this->docPath = dirname(dirname(__DIR__)) . DIRECTORY_SEPARATOR;
+        $this->docPath = $_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR;
 
         parent::__construct();
     }
