@@ -250,7 +250,9 @@
                                                                 <br />
                                                             {/if}
 
-                                                            <span class="address--salutation">{$sUserData.billingaddress.salutation|salutation}</span>
+                                                            {if $sUserData.billingaddress.salutation != "none"}
+                                                                <span class="address--salutation">{$sUserData.billingaddress.salutation|salutation}</span>
+                                                            {/if}
                                                             {if {config name="displayprofiletitle"}}
                                                                 <span class="address--title">{$sUserData.billingaddress.title|escapeHtml}</span><br/>
                                                             {/if}
@@ -372,7 +374,9 @@
                                                     <span class="address--company is--bold">{$sUserData.billingaddress.company|escapeHtml}</span>{if $sUserData.billingaddress.department}<br /><span class="address--department is--bold">{$sUserData.billingaddress.department|escapeHtml}</span>{/if}
                                                         <br />
                                                     {/if}
-                                                    <span class="address--salutation">{$sUserData.billingaddress.salutation|salutation}</span>
+                                                    {if $sUserData.billingaddress.salutation != "none"}
+                                                        <span class="address--salutation">{$sUserData.billingaddress.salutation|salutation}</span>
+                                                    {/if}
                                                     {if {config name="displayprofiletitle"}}
                                                         <span class="address--title">{$sUserData.billingaddress.title|escapeHtml}</span><br/>
                                                     {/if}
@@ -459,7 +463,9 @@
                                                         <br />
                                                     {/if}
 
-                                                    <span class="address--salutation">{$sUserData.shippingaddress.salutation|salutation}</span>
+                                                    {if $sUserData.shippingaddress.salutation != "none"}
+                                                        <span class="address--salutation">{$sUserData.shippingaddress.salutation|salutation}</span>
+                                                    {/if}
                                                     {if {config name="displayprofiletitle"}}
                                                         <span class="address--title">{$sUserData.shippingaddress.title|escapeHtml}</span><br/>
                                                     {/if}

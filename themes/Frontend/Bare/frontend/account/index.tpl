@@ -81,7 +81,7 @@
                     {block name="frontend_account_index_info_content"}
                         <div class="panel--body is--wide">
                             <p>
-                                {$sUserData.additional.user.salutation|salutation}
+                                {if $sUserData.additional.user.salutation != "none"}{$sUserData.additional.user.salutation|salutation}{/if}
                                 {if {config name="displayprofiletitle"}}
                                     {$sUserData.additional.user.title|escapeHtml}<br/>
                                 {/if}
@@ -157,7 +157,9 @@
                                     </p>
                                 {/if}
                                 <p>
-                                    <span class="address--salutation">{$sUserData.billingaddress.salutation|salutation|escapeHtml}</span>
+                                    {if $sUserData.billingaddress.salutation != "none"}
+                                        <span class="address--salutation">{$sUserData.billingaddress.salutation|salutation|escapeHtml}</span>
+                                    {/if}
                                     {if {config name="displayprofiletitle"}}
                                         <span class="address--title">{$sUserData.billingaddress.title|escapeHtml}</span><br/>
                                     {/if}
@@ -220,7 +222,9 @@
                                             </p>
                                         {/if}
                                         <p>
-                                            <span class="address--salutation">{$sUserData.shippingaddress.salutation|salutation}</span>
+                                            {if $sUserData.shippingaddress.salutation != "none"}
+                                                <span class="address--salutation">{$sUserData.shippingaddress.salutation|salutation}</span>
+                                            {/if}
                                             {if {config name="displayprofiletitle"}}
                                                 <span class="address--title">{$sUserData.shippingaddress.title|escapeHtml}</span><br/>
                                             {/if}
