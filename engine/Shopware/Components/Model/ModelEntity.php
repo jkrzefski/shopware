@@ -25,12 +25,21 @@
 namespace Shopware\Components\Model;
 
 use Doctrine\Common\Collections\ArrayCollection;
+use Ramsey\Uuid\UuidInterface;
+use Shopware\Bundle\UuidBundle\Common\UuidAwareInterface;
 
 /**
  * Abstract class for shopware standard models.
  */
-abstract class ModelEntity
+abstract class ModelEntity implements UuidAwareInterface
 {
+    /**
+     * @var UuidInterface|null
+     *
+     * ORM\Column(name="uuid", type="guid", nullable=true)
+     */
+    protected $uuid;
+
     /**
      * Example:
      *
@@ -320,6 +329,22 @@ abstract class ModelEntity
         $this->$property = $instance;
 
         return $this;
+    }
+
+    /**
+     * @return UuidInterface|null
+     */
+    public function getUuid()
+    {
+        return $this->uuid;
+    }
+
+    /**
+     * @param UuidInterface|null $uuid
+     */
+    public function setUuid($uuid)
+    {
+        $this->uuid = $uuid;
     }
 
     /**

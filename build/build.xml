@@ -123,7 +123,7 @@
         </exec>
     </target>
 
-    <target name="build-database" depends="build-database-foundation, build-database-deploy-demodata" />
+    <target name="build-database" depends="build-database-foundation, build-database-deploy-demodata, build-database-populate-uuids" />
 
     <target name="build-create-admin-account">
         <exec executable="${script.php}" dir="${basedir}/bin" failonerror="true">
@@ -157,6 +157,13 @@
             <arg value="--steps=importDemodata,setupShop"/>
             <arg value="--host=${app.host}"/>
             <arg value="--path=${app.path}"/>
+        </exec>
+    </target>
+
+    <target name="build-database-populate-uuids">
+        <exec executable="${script.php}" dir="${basedir}/bin" failonerror="true">
+            <arg line="console sw:uuid:populate"/>
+            <arg value="--all"/>
         </exec>
     </target>
 

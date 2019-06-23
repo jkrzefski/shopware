@@ -1,0 +1,25 @@
+<?xml version="1.0" ?>
+
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+
+    <services>
+        <defaults public="true"/>
+
+        <service class="Shopware\Bundle\UuidBundle\Subscriber\UuidSubscriber"
+                 id="shopware.components.model.uuid_subscriber">
+            <tag name="doctrine.event_subscriber"/>
+        </service>
+
+        <service class="Shopware\Bundle\UuidBundle\Commands\PopulateUuids"
+                 id="shopware_bundle_uuid.commands.populate_uuids">
+            <tag name="console.command" command="sw:uuid:populate"/>
+        </service>
+
+        <service class="Shopware\Bundle\UuidBundle\Service\Core\UuidPopulator"
+                 id="shopware_bundle_uuid.service_core.uuid_populator">
+            <argument id="dbal_connection" type="service"/>
+        </service>
+    </services>
+</container>

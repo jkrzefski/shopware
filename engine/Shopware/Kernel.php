@@ -605,6 +605,7 @@ class Kernel implements HttpKernelInterface, TerminableInterface
         $loader->load('ControllerBundle/services.xml');
         $loader->load('MailBundle/services.xml');
         $loader->load('ContentTypeBundle/services.xml');
+        $loader->load('UuidBundle/services.xml');
 
         if (is_file($file = __DIR__ . '/Components/DependencyInjection/services_local.xml')) {
             $loader->load($file);
