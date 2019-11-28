@@ -81,7 +81,8 @@
         "superbalist/flysystem-google-storage": "6.0.0",
         "stecman/symfony-console-completion": "0.10.1",
         "beberlei/doctrineextensions": "1.2.1",
-        "phpstan/phpstan-shim": "0.11.19"
+        "phpstan/phpstan-shim": "0.11.19",
+        "symfony/lock": "^3.4"
     },
     "suggest": {
         "ext-apcu": "*",

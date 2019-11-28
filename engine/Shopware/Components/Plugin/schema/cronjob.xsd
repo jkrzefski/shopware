@@ -17,6 +17,7 @@
             <xsd:element name="active" type="xsd:boolean"/>
             <xsd:element name="interval" type="xsd:int"/>
             <xsd:element name="disableOnError" type="xsd:boolean"/>
+            <xsd:element name="parallelExecutionAllowed" type="xsd:boolean" minOccurs="0" default="1"/>
         </xsd:sequence>
     </xsd:complexType>
 

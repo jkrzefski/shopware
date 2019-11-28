@@ -1,20 +1,25 @@
 <?php
 /**
- * Enlight
+ * Shopware 5
+ * Copyright (c) shopware AG
  *
- * LICENSE
+ * According to our dual licensing model, this program can be used either
+ * under the terms of the GNU Affero General Public License, version 3,
+ * or under a proprietary license.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://enlight.de/license
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@shopware.de so we can send you a copy immediately.
+ * The texts of the GNU Affero General Public License with an additional
+ * permission and of our proprietary license can be found at and
+ * in the LICENSE file you have received along with this program.
  *
- * @category   Enlight
- * @copyright  Copyright (c) 2011, shopware AG (http://www.shopware.de)
- * @license    http://enlight.de/license     New BSD License
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * "Shopware" is a registered trademark of shopware AG.
+ * The licensing of the program under the AGPLv3 does not imply a
+ * trademark license. Therefore any rights, title and interest in
+ * our trademarks remain entirely with us.
  */
 
 /**
@@ -24,9 +29,6 @@
  * When the cron job will be executed the cron job manager will pass the cron job arguments
  * to the listener method.
  *
- * @category   Enlight
- *
- * @copyright  Copyright (c) 2011, shopware AG (http://www.shopware.de)
  * @license    http://enlight.de/license     New BSD License
  */
 class Enlight_Components_Cron_Job
@@ -88,6 +90,11 @@ class Enlight_Components_Cron_Job
     protected $options = [];
 
     /**
+     * @var bool
+     */
+    protected $parallelExecutionAllowed = true;
+
+    /**
      * This is a Cronjob Model. Following option must be provided in the options array
      *
      * id - unique identifier for a specific cronjob eg. autoincrement database field. Expected data type: Integer
@@ -102,8 +109,6 @@ class Enlight_Components_Cron_Job
      * name - Name or the description of the cron job: Expected data type: String
      * action - Name of the action which is called during the execution phase. Expected data type: String
      * data - Data storage. Can be used to store answers from cron job call. Expected data type: String
-     *
-     * @param array $options
      */
     public function __construct(array $options)
     {
@@ -114,8 +119,6 @@ class Enlight_Components_Cron_Job
      * Magic method to get parameters
      *
      * @param string $name
-     *
-     * @return mixed
      */
     public function __get($name)
     {
@@ -135,8 +138,6 @@ class Enlight_Components_Cron_Job
      * name - Name or the description of the cron job: Expected data type: String
      * action - Name of the action which is called during the execution phase. Expected data type: String
      * data - Data storage. Can be used to store answers from cron job call. Expected data type: String
-     *
-     * @param array $options
      *
      * @throws Enlight_Exception|Exception
      */
@@ -174,6 +175,9 @@ class Enlight_Components_Cron_Job
                 case 'data':
                     $this->setData($value);
                     break;
+                case 'parallelExecutionAllowed':
+                    $this->setParallelExecutionAllowed($value);
+                    break;
                 default:
                     $this->options[$fieldName] = $value;
                     break;
@@ -183,8 +187,6 @@ class Enlight_Components_Cron_Job
 
     /**
      * Sets the data field
-     *
-     * @param mixed $data
      *
      * @return Enlight_Components_Cron_Job
      */
@@ -344,7 +346,7 @@ class Enlight_Components_Cron_Job
     /**
      * Sets the date and time when the cronjob stopped its run.
      *
-     * @param null|Zend_Date $end
+     * @param Zend_Date|null $end
      *
      * @return Enlight_Components_Cron_Job
      */
@@ -440,13 +442,25 @@ class Enlight_Components_Cron_Job
         return $this;
     }
 
+    public function isParallelExecutionAllowed(): bool
+    {
+        return $this->parallelExecutionAllowed;
+    }
+
+    /**
+     * @param bool $parallelExecutionAllowed
+     */
+    public function setParallelExecutionAllowed($parallelExecutionAllowed): self
+    {
+        $this->parallelExecutionAllowed = (bool) $parallelExecutionAllowed;
+
+        return $this;
+    }
+
     /**
      * Method to get the options
      *
-     * @param       $name
-     * @param mixed $default
-     *
-     * @return mixed
+     * @param mixed $name
      */
     public function get($name, $default = null)
     {

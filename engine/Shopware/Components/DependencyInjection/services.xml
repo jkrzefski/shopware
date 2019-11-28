@@ -170,6 +170,7 @@
         <service id="cron" class="Enlight_Components_Cron_Manager">
             <argument type="service" id="cron_adapter"/>
             <argument type="service" id="events"/>
+            <argument type="service" id="Symfony\Component\Lock\Factory"/>
             <argument type="string">Shopware_Components_Cron_CronJob</argument>
         </service>
 
@@ -984,6 +985,12 @@
         <service id="Shopware\Components\CacheSubscriber">
             <argument type="service" id="cache"/>
             <tag name="shopware.event_subscriber"/>
+        </service>
+
+        <service id="Symfony\Component\Lock\Store\FlockStore"/>
+
+        <service id="Symfony\Component\Lock\Factory">
+            <argument type="service" id="Symfony\Component\Lock\Store\FlockStore"/>
         </service>
     </services>
 </container>

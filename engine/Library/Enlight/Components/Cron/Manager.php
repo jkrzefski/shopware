@@ -1,21 +1,28 @@
 <?php
 /**
- * Enlight
+ * Shopware 5
+ * Copyright (c) shopware AG
  *
- * LICENSE
+ * According to our dual licensing model, this program can be used either
+ * under the terms of the GNU Affero General Public License, version 3,
+ * or under a proprietary license.
  *
- * This source file is subject to the new BSD license that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://enlight.de/license
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@shopware.de so we can send you a copy immediately.
+ * The texts of the GNU Affero General Public License with an additional
+ * permission and of our proprietary license can be found at and
+ * in the LICENSE file you have received along with this program.
  *
- * @category   Enlight
- * @copyright  Copyright (c) 2011, shopware AG (http://www.shopware.de)
- * @license    http://enlight.de/license     New BSD License
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * "Shopware" is a registered trademark of shopware AG.
+ * The licensing of the program under the AGPLv3 does not imply a
+ * trademark license. Therefore any rights, title and interest in
+ * our trademarks remain entirely with us.
  */
+
+use Symfony\Component\Lock\Factory;
 
 /**
  * Stores and executes all registered cron jobs.
@@ -23,9 +30,6 @@
  * The Enlight_Components_Cron_Manager is responsible to store all registered cron jobs and
  * execute the cron jobs with the associated cron job arguments.
  *
- * @category   Enlight
- *
- * @copyright  Copyright (c) 2011, shopware AG (http://www.shopware.de)
  * @license    http://enlight.de/license     New BSD License
  */
 class Enlight_Components_Cron_Manager
@@ -43,9 +47,13 @@ class Enlight_Components_Cron_Manager
     protected $eventArgsClass = 'Enlight_Components_Cron_EventArgs';
 
     /**
+     * @var Factory
+     */
+    private $lockFactory;
+
+    /**
      * Constructor can be injected with a read / write adapter object
      *
-     * @param Enlight_Components_Cron_Adapter $adapter
      * @param Enlight_Event_EventManager|null $eventManager
      * @param string                          $eventArgsClass
      *
@@ -54,10 +62,12 @@ class Enlight_Components_Cron_Manager
     public function __construct(
         Enlight_Components_Cron_Adapter $adapter,
         Enlight_Event_EventManager $eventManager,
+        Factory $lockFactory,
         $eventArgsClass = null
     ) {
         $this->setAdapter($adapter);
         $this->setEventManager($eventManager);
+        $this->lockFactory = $lockFactory;
         if ($eventArgsClass !== null) {
             $this->eventArgsClass = $eventArgsClass;
         }
@@ -65,8 +75,6 @@ class Enlight_Components_Cron_Manager
 
     /**
      * Sets the read / write adapter
-     *
-     * @param Enlight_Components_Cron_Adapter $adapter
      *
      * @return Enlight_Components_Cron_Manager
      */
@@ -90,8 +98,6 @@ class Enlight_Components_Cron_Manager
     /**
      * Sets an Event Manager. Needed to execute the cron
      *
-     * @param Enlight_Event_EventManager|null $eventManager
-     *
      * @return Enlight_Components_Cron_Manager
      */
     public function setEventManager(Enlight_Event_EventManager $eventManager = null)
@@ -113,8 +119,6 @@ class Enlight_Components_Cron_Manager
 
     /**
      * Deactivate a given Cron Job in the crontab
-     *
-     * @param Enlight_Components_Cron_Job $job
      *
      * @return Enlight_Components_Cron_Adapter
      */
@@ -172,7 +176,7 @@ class Enlight_Components_Cron_Manager
      *
      * @param int $id
      *
-     * @return null|Enlight_Components_Cron_Job
+     * @return Enlight_Components_Cron_Job|null
      */
     public function getJobById($id)
     {
@@ -189,7 +193,7 @@ class Enlight_Components_Cron_Manager
      *
      * @param string $name
      *
-     * @return null|Enlight_Components_Cron_Job
+     * @return Enlight_Components_Cron_Job|null
      */
     public function getJobByName($name)
     {
@@ -206,7 +210,7 @@ class Enlight_Components_Cron_Manager
      *
      * @param string $action
      *
-     * @return null|Enlight_Components_Cron_Job
+     * @return Enlight_Components_Cron_Job|null
      */
     public function getJobByAction($action)
     {
@@ -220,8 +224,6 @@ class Enlight_Components_Cron_Manager
 
     /**
      * Adds an job to the crontab
-     *
-     * @param Enlight_Components_Cron_Job $job
      *
      * @return Enlight_Components_Cron_Manager
      */
@@ -237,7 +239,7 @@ class Enlight_Components_Cron_Manager
      *
      * @param bool $force
      *
-     * @return null|Enlight_Components_Cron_Job
+     * @return Enlight_Components_Cron_Job|null
      */
     public function getNextJob($force = false)
     {
@@ -246,8 +248,6 @@ class Enlight_Components_Cron_Manager
 
     /**
      * Runs a job by handing it over to
-     *
-     * @param Enlight_Components_Cron_Job $job
      *
      * @throws Throwable
      *
@@ -263,29 +263,42 @@ class Enlight_Components_Cron_Manager
         }
 
         try {
-            $this->adapter->startJob($job);
-            /** @var Enlight_Components_Cron_EventArgs $jobArgs */
-            $jobArgs = new $this->eventArgsClass([
-                'subject' => $this,
-                'job' => $job,
-            ]);
-            $jobArgs->setReturn($job->getData());
+            $lock = $this->lockFactory->createLock($job->getAction());
+            $lockAcquired = false;
 
-            $jobArgs = $this->eventManager->notifyUntil(
-                $job->getAction(),
-                $jobArgs
-            );
-
-            if ($jobArgs !== null) {
-                $job->setData($jobArgs->getReturn());
-                $this->adapter->updateJob($job);
+            if (!$job->isParallelExecutionAllowed() && !($lockAcquired = $lock->acquire())) {
+                throw new Enlight_Components_Cron_ParallelExecutionException();
             }
 
-            $this->endJob($job);
-            $this->eventManager->notify('Shopware_CronJob_Finished_' . $job->getAction(), [
-                'subject' => $this,
-                'job' => $job,
-            ]);
+            try {
+                $this->adapter->startJob($job);
+                /** @var Enlight_Components_Cron_EventArgs $jobArgs */
+                $jobArgs = new $this->eventArgsClass([
+                    'subject' => $this,
+                    'job' => $job,
+                ]);
+                $jobArgs->setReturn($job->getData());
+
+                $jobArgs = $this->eventManager->notifyUntil(
+                    $job->getAction(),
+                    $jobArgs
+                );
+
+                if ($jobArgs !== null) {
+                    $job->setData($jobArgs->getReturn());
+                    $this->adapter->updateJob($job);
+                }
+
+                $this->endJob($job);
+                $this->eventManager->notify('Shopware_CronJob_Finished_' . $job->getAction(), [
+                    'subject' => $this,
+                    'job' => $job,
+                ]);
+            } finally {
+                if ($lockAcquired) {
+                    $lock->release();
+                }
+            }
 
             return $jobArgs;
         } catch (\Throwable $e) {
@@ -308,8 +321,6 @@ class Enlight_Components_Cron_Manager
 
     /**
      * Ends a job by handing it over to
-     *
-     * @param Enlight_Components_Cron_Job $job
      */
     protected function endJob(Enlight_Components_Cron_Job $job)
     {
