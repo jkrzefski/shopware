@@ -9,19 +9,19 @@
         {/block}
 
         {* Vat info *}
-        {if !$hideCopyrightNotice}
-            {block name='frontend_index_minimal_footer_vat_info'}
-                <div class="footer--vat-info">
-                    <p class="vat-info--text">
-                        {if $sOutputNet}
-                            {s name='FooterInfoExcludeVat' namespace="frontend/index/footer"}{/s}
-                        {else}
-                            {s name='FooterInfoIncludeVat' namespace="frontend/index/footer"}{/s}
-                        {/if}
-                    </p>
-                </div>
-            {/block}
+        {block name='frontend_index_minimal_footer_vat_info'}
+            <div class="footer--vat-info">
+                <p class="vat-info--text">
+                    {if $sOutputNet}
+                        {s name='FooterInfoExcludeVat' namespace="frontend/index/footer"}{/s}
+                    {else}
+                        {s name='FooterInfoIncludeVat' namespace="frontend/index/footer"}{/s}
+                    {/if}
+                </p>
+            </div>
+        {/block}
 
+        {if !$hideCopyrightNotice}
             {* Copyright *}
             {block name="frontend_index_minimal_footer_copyright"}
                 <div class="footer--copyright">
